@@ -10,10 +10,23 @@ interface AuthContextType {
   role: AppRole | null;
   loading: boolean;
   signInWithGoogle: () => Promise<{ error: Error | null }>;
+  signInDemo: (demoRole: AppRole) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+// Demo account credentials
+const DEMO_ACCOUNTS = {
+  secretary: {
+    email: 'demo.secretary@hua.gr',
+    password: 'demo123456'
+  },
+  phd_student: {
+    email: 'demo.phd@hua.gr', 
+    password: 'demo123456'
+  }
+};
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
@@ -79,11 +92,64 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       options: {
         redirectTo: `${window.location.origin}/auth/callback`,
         queryParams: {
-          hd: 'hua.gr', // Restrict to hua.gr domain
+          hd: 'hua.gr',
         },
       },
     });
     return { error: error as Error | null };
+  };
+
+  const signInDemo = async (demoRole: AppRole) => {
+    const account = DEMO_ACCOUNTS[demoRole];
+    
+    // Try to sign in first
+    const { data, error: signInError } = await supabase.auth.signInWithPassword({
+      email: account.email,
+      password: account.password,
+    });
+
+    if (signInError) {
+      // If user doesn't exist, create it
+      if (signInError.message.includes('Invalid login credentials')) {
+        const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+          email: account.email,
+          password: account.password,
+          options: {
+            emailRedirectTo: `${window.location.origin}/`,
+            data: {
+              full_name: demoRole === 'secretary' ? 'Demo Γραμματεία' : 'Demo Διδακτορικός',
+            },
+          },
+        });
+
+        if (signUpError) {
+          return { error: signUpError as Error };
+        }
+
+        // Assign role
+        if (signUpData.user) {
+          await supabase.from('user_roles').insert({ 
+            user_id: signUpData.user.id, 
+            role: demoRole 
+          });
+          
+          // If PhD student, link to demo professor
+          if (demoRole === 'phd_student') {
+            await supabase.from('phd_supervisor_links').insert({
+              user_id: signUpData.user.id,
+              professor_id: '11111111-1111-1111-1111-111111111111' // Demo professor
+            });
+          }
+          
+          setRole(demoRole);
+        }
+
+        return { error: null };
+      }
+      return { error: signInError as Error };
+    }
+
+    return { error: null };
   };
 
   const signOut = async () => {
@@ -94,7 +160,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, session, role, loading, signInWithGoogle, signOut }}>
+    <AuthContext.Provider value={{ user, session, role, loading, signInWithGoogle, signInDemo, signOut }}>
       {children}
     </AuthContext.Provider>
   );
