@@ -164,7 +164,7 @@ export default function Dashboard() {
   };
 
   const formatDate = (date: string) => {
-    return new Date(date).toLocaleDateString('en-US', {
+    return new Date(date).toLocaleDateString('el-GR', {
       weekday: 'short',
       month: 'short',
       day: 'numeric',
@@ -196,14 +196,14 @@ export default function Dashboard() {
               <div>
                 <h1 className="text-xl font-serif font-bold">ExamGuard</h1>
                 <p className="text-sm opacity-80">
-                  {role === 'secretary' ? 'Secretary Dashboard' : 'PhD Student Dashboard'}
+                  {role === 'secretary' ? 'Πίνακας Γραμματείας' : 'Πίνακας Διδακτορικού'}
                 </p>
               </div>
             </div>
             
             <div className="flex items-center gap-4">
               <Badge variant="secondary" className="bg-accent text-accent-foreground">
-                {role === 'secretary' ? 'Secretary' : 'PhD Student'}
+                {role === 'secretary' ? 'Γραμματεία' : 'Υπ. Διδάκτορας'}
               </Badge>
               <Button 
                 variant="ghost" 
@@ -212,7 +212,7 @@ export default function Dashboard() {
                 className="text-primary-foreground hover:bg-primary-foreground/10"
               >
                 <LogOut className="w-4 h-4 mr-2" />
-                Sign Out
+                Αποσύνδεση
               </Button>
             </div>
           </div>
@@ -225,16 +225,16 @@ export default function Dashboard() {
           <div className="lg:col-span-2 space-y-6">
             <div className="flex items-center justify-between">
               <div>
-                <h2 className="text-2xl font-serif font-bold text-foreground">Upcoming Exams</h2>
+                <h2 className="text-2xl font-serif font-bold text-foreground">Προσεχείς Εξετάσεις</h2>
                 <p className="text-muted-foreground">
                   {role === 'phd_student' 
-                    ? 'Mark your availability for supervision' 
-                    : 'Manage exam supervision assignments'}
+                    ? 'Δηλώστε τη διαθεσιμότητά σας για επιτήρηση' 
+                    : 'Διαχείριση αναθέσεων επιτήρησης'}
                 </p>
               </div>
               <Badge variant="outline" className="text-muted-foreground">
                 <Calendar className="w-3 h-3 mr-1" />
-                {exams.length} exams
+                {exams.length} εξετάσεις
               </Badge>
             </div>
 
@@ -246,11 +246,11 @@ export default function Dashboard() {
               <Card className="shadow-soft">
                 <CardContent className="py-12 text-center">
                   <BookOpen className="w-12 h-12 mx-auto text-muted-foreground/50 mb-4" />
-                  <h3 className="font-semibold text-foreground mb-2">No exams scheduled</h3>
+                  <h3 className="font-semibold text-foreground mb-2">Δεν υπάρχουν προγραμματισμένες εξετάσεις</h3>
                   <p className="text-muted-foreground text-sm">
                     {role === 'secretary' 
-                      ? 'Add courses and schedule exams to get started' 
-                      : 'Check back later for upcoming exams'}
+                      ? 'Προσθέστε μαθήματα και προγραμματίστε εξετάσεις' 
+                      : 'Ελέγξτε αργότερα για προσεχείς εξετάσεις'}
                   </p>
                 </CardContent>
               </Card>
@@ -308,7 +308,7 @@ export default function Dashboard() {
                               )}
                               <span className="flex items-center gap-1.5">
                                 <Users className="w-4 h-4" />
-                                {exam.supervisors_needed} needed
+                                {exam.supervisors_needed} επιτηρητές
                               </span>
                             </div>
                           </div>
@@ -323,12 +323,12 @@ export default function Dashboard() {
                               {isAvailable ? (
                                 <>
                                   <CheckCircle2 className="w-4 h-4 mr-1.5" />
-                                  Available
+                                  Διαθέσιμος
                                 </>
                               ) : (
                                 <>
                                   <AlertCircle className="w-4 h-4 mr-1.5" />
-                                  Mark Available
+                                  Δήλωση Διαθεσιμότητας
                                 </>
                               )}
                             </Button>
@@ -349,16 +349,16 @@ export default function Dashboard() {
               <CardHeader className="pb-3">
                 <div className="flex items-center gap-2">
                   <Trophy className="w-5 h-5 text-accent" />
-                  <CardTitle className="text-lg font-serif">Top Supervisors</CardTitle>
+                  <CardTitle className="text-lg font-serif">Κορυφαίοι Επιτηρητές</CardTitle>
                 </div>
                 <CardDescription>
-                  PhD students ranked by supervision points
+                  Κατάταξη διδακτορικών με βάση τους πόντους επιτήρησης
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 {profiles.length === 0 ? (
                   <p className="text-sm text-muted-foreground text-center py-4">
-                    No rankings yet
+                    Δεν υπάρχει κατάταξη ακόμα
                   </p>
                 ) : (
                   <div className="space-y-3">
@@ -395,20 +395,20 @@ export default function Dashboard() {
             {role === 'secretary' && (
               <Card className="shadow-soft bg-gradient-card">
                 <CardHeader className="pb-3">
-                  <CardTitle className="text-lg font-serif">Quick Actions</CardTitle>
+                  <CardTitle className="text-lg font-serif">Γρήγορες Ενέργειες</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-2">
                   <Button variant="outline" className="w-full justify-start" onClick={() => navigate('/manage')}>
                     <BookOpen className="w-4 h-4 mr-2" />
-                    Manage Courses
+                    Διαχείριση Μαθημάτων
                   </Button>
                   <Button variant="outline" className="w-full justify-start" onClick={() => navigate('/manage')}>
                     <Calendar className="w-4 h-4 mr-2" />
-                    Schedule Exams
+                    Προγραμματισμός Εξετάσεων
                   </Button>
                   <Button variant="outline" className="w-full justify-start" onClick={() => navigate('/manage')}>
                     <Users className="w-4 h-4 mr-2" />
-                    Assign Supervisors
+                    Ανάθεση Επιτηρητών
                   </Button>
                 </CardContent>
               </Card>
@@ -420,15 +420,15 @@ export default function Dashboard() {
                 <CardHeader className="pb-3">
                   <CardTitle className="text-lg font-serif flex items-center gap-2">
                     <Star className="w-5 h-5 text-accent" />
-                    Your Supervisor
+                    Ο Επιβλέπων σας
                   </CardTitle>
                   <CardDescription>
-                    Exams from your supervisor's courses are marked as priority
+                    Οι εξετάσεις του επιβλέποντά σας εμφανίζονται με αστέρι ⭐
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
                   <Button variant="outline" className="w-full" onClick={() => navigate('/profile')}>
-                    Set Supervisor
+                    Ορισμός Επιβλέποντα
                   </Button>
                 </CardContent>
               </Card>

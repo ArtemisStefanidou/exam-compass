@@ -2,15 +2,14 @@ import { createContext, useContext, useEffect, useState, ReactNode } from 'react
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 
-type AppRole = 'secretary' | 'phd_student';
+export type AppRole = 'secretary' | 'phd_student';
 
 interface AuthContextType {
   user: User | null;
   session: Session | null;
   role: AppRole | null;
   loading: boolean;
-  signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
-  signUp: (email: string, password: string, fullName: string, role: AppRole) => Promise<{ error: Error | null }>;
+  signInWithGoogle: () => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
 }
 
@@ -74,47 +73,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const signIn = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-    return { error: error as Error | null };
-  };
-
-  const signUp = async (email: string, password: string, fullName: string, selectedRole: AppRole) => {
-    const redirectUrl = `${window.location.origin}/`;
-    
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
+  const signInWithGoogle = async () => {
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
       options: {
-        emailRedirectTo: redirectUrl,
-        data: {
-          full_name: fullName,
+        redirectTo: `${window.location.origin}/auth/callback`,
+        queryParams: {
+          hd: 'hua.gr', // Restrict to hua.gr domain
         },
       },
     });
-
-    if (error) {
-      return { error: error as Error };
-    }
-
-    // If user was created, assign the role
-    if (data.user) {
-      const { error: roleError } = await supabase
-        .from('user_roles')
-        .insert({ user_id: data.user.id, role: selectedRole });
-
-      if (roleError) {
-        console.error('Error assigning role:', roleError);
-        return { error: new Error('Account created but failed to assign role. Please contact support.') };
-      }
-      
-      setRole(selectedRole);
-    }
-
-    return { error: null };
+    return { error: error as Error | null };
   };
 
   const signOut = async () => {
@@ -125,7 +94,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, session, role, loading, signIn, signUp, signOut }}>
+    <AuthContext.Provider value={{ user, session, role, loading, signInWithGoogle, signOut }}>
       {children}
     </AuthContext.Provider>
   );
