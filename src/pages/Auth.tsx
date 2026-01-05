@@ -3,13 +3,15 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/lib/auth';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { GraduationCap, Loader2, AlertCircle } from 'lucide-react';
+import { Separator } from '@/components/ui/separator';
+import { GraduationCap, Loader2, AlertCircle, Users, BookOpen } from 'lucide-react';
 
 export default function Auth() {
   const navigate = useNavigate();
-  const { user, signInWithGoogle, loading } = useAuth();
+  const { user, signInWithGoogle, signInDemo, loading } = useAuth();
   
   const [isLoading, setIsLoading] = useState(false);
+  const [demoLoading, setDemoLoading] = useState<'secretary' | 'phd_student' | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -28,7 +30,18 @@ export default function Auth() {
       setError('Αποτυχία σύνδεσης με Google. Παρακαλώ δοκιμάστε ξανά.');
       setIsLoading(false);
     }
-    // Note: Don't setIsLoading(false) on success - redirect happens automatically
+  };
+
+  const handleDemoLogin = async (role: 'secretary' | 'phd_student') => {
+    setError(null);
+    setDemoLoading(role);
+    
+    const { error } = await signInDemo(role);
+    
+    if (error) {
+      setError('Αποτυχία σύνδεσης demo. Παρακαλώ δοκιμάστε ξανά.');
+      setDemoLoading(null);
+    }
   };
 
   if (loading) {
@@ -67,19 +80,74 @@ export default function Auth() {
               </div>
             )}
             
-            <div className="text-center mb-6">
-              <h2 className="text-xl font-semibold text-foreground mb-2">
-                Σύνδεση
+            {/* Demo Login Section */}
+            <div className="mb-6">
+              <h2 className="text-lg font-semibold text-foreground mb-2 text-center">
+                Δοκιμαστική Είσοδος
               </h2>
+              <p className="text-sm text-muted-foreground text-center mb-4">
+                Δοκιμάστε την εφαρμογή χωρίς λογαριασμό
+              </p>
+              
+              <div className="space-y-3">
+                <Button 
+                  variant="outline"
+                  onClick={() => handleDemoLogin('secretary')} 
+                  className="w-full h-14 justify-start px-4"
+                  disabled={demoLoading !== null || isLoading}
+                >
+                  {demoLoading === 'secretary' ? (
+                    <Loader2 className="w-5 h-5 animate-spin mr-3" />
+                  ) : (
+                    <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center mr-3">
+                      <Users className="w-5 h-5 text-primary" />
+                    </div>
+                  )}
+                  <div className="text-left">
+                    <p className="font-medium">Είσοδος ως Γραμματεία</p>
+                    <p className="text-xs text-muted-foreground">Διαχείριση μαθημάτων & εξετάσεων</p>
+                  </div>
+                </Button>
+                
+                <Button 
+                  variant="outline"
+                  onClick={() => handleDemoLogin('phd_student')} 
+                  className="w-full h-14 justify-start px-4"
+                  disabled={demoLoading !== null || isLoading}
+                >
+                  {demoLoading === 'phd_student' ? (
+                    <Loader2 className="w-5 h-5 animate-spin mr-3" />
+                  ) : (
+                    <div className="w-10 h-10 rounded-lg bg-accent/20 flex items-center justify-center mr-3">
+                      <BookOpen className="w-5 h-5 text-accent" />
+                    </div>
+                  )}
+                  <div className="text-left">
+                    <p className="font-medium">Είσοδος ως Διδακτορικός</p>
+                    <p className="text-xs text-muted-foreground">Δήλωση διαθεσιμότητας επιτήρησης</p>
+                  </div>
+                </Button>
+              </div>
+            </div>
+            
+            <div className="relative my-6">
+              <Separator />
+              <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-card px-3 text-xs text-muted-foreground">
+                ή
+              </span>
+            </div>
+            
+            {/* Google Login */}
+            <div className="text-center mb-4">
               <p className="text-sm text-muted-foreground">
-                Χρησιμοποιήστε τον ακαδημαϊκό σας λογαριασμό @hua.gr
+                Σύνδεση με ακαδημαϊκό λογαριασμό
               </p>
             </div>
             
             <Button 
               onClick={handleGoogleSignIn} 
               className="w-full h-12 text-base"
-              disabled={isLoading}
+              disabled={isLoading || demoLoading !== null}
             >
               {isLoading ? (
                 <Loader2 className="w-5 h-5 animate-spin mr-2" />
@@ -106,17 +174,11 @@ export default function Auth() {
               Σύνδεση με Google (@hua.gr)
             </Button>
             
-            <p className="text-xs text-muted-foreground text-center mt-6">
+            <p className="text-xs text-muted-foreground text-center mt-4">
               Μόνο λογαριασμοί @hua.gr επιτρέπονται
             </p>
           </CardContent>
         </Card>
-        
-        <div className="text-center mt-6">
-          <p className="text-sm text-muted-foreground">
-            Γραμματεία ή Υποψήφιοι Διδάκτορες
-          </p>
-        </div>
       </div>
     </div>
   );
