@@ -100,76 +100,83 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const signInDemo = async (demoRole: AppRole) => {
-    const account = DEMO_ACCOUNTS[demoRole];
-    
-    // Try to sign in first
-    const { data, error: signInError } = await supabase.auth.signInWithPassword({
-      email: account.email,
-      password: account.password,
-    });
+    try {
+      const account = DEMO_ACCOUNTS[demoRole];
+      
+      // Try to sign in first
+      const { data, error: signInError } = await supabase.auth.signInWithPassword({
+        email: account.email,
+        password: account.password,
+      });
 
-    if (signInError) {
-      // If user doesn't exist, create it
-      if (signInError.message.includes('Invalid login credentials')) {
-        const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
-          email: account.email,
-          password: account.password,
-          options: {
-            emailRedirectTo: `${window.location.origin}/`,
-            data: {
-              full_name: demoRole === 'secretary' ? 'Demo Γραμματεία' : 'Demo Διδακτορικός',
+      if (signInError) {
+        // If user doesn't exist, create it
+        if (signInError.message.includes('Invalid login credentials')) {
+          const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+            email: account.email,
+            password: account.password,
+            options: {
+              emailRedirectTo: `${window.location.origin}/`,
+              data: {
+                full_name: demoRole === 'secretary' ? 'Demo Γραμματεία' : 'Demo Διδακτορικός',
+              },
             },
-          },
-        });
-
-        if (signUpError) {
-          return { error: signUpError as Error };
-        }
-
-        // Assign role
-        if (signUpData.user) {
-          await supabase.from('user_roles').insert({ 
-            user_id: signUpData.user.id, 
-            role: demoRole 
           });
-          
-          // If PhD student, link to demo professor
-          if (demoRole === 'phd_student') {
-            await supabase.from('phd_supervisor_links').insert({
-              user_id: signUpData.user.id,
-              professor_id: '11111111-1111-1111-1111-111111111111' // Demo professor
-            });
+
+          if (signUpError) {
+            console.error('Sign up error:', signUpError);
+            return { error: signUpError as Error };
           }
-          
+
+          // Assign role
+          if (signUpData.user) {
+            await supabase.from('user_roles').insert({ 
+              user_id: signUpData.user.id, 
+              role: demoRole 
+            });
+            
+            // If PhD student, link to demo professor
+            if (demoRole === 'phd_student') {
+              await supabase.from('phd_supervisor_links').insert({
+                user_id: signUpData.user.id,
+                professor_id: '11111111-1111-1111-1111-111111111111' // Demo professor
+              });
+            }
+            
+            setRole(demoRole);
+          }
+
+          return { error: null };
+        }
+        console.error('Sign in error:', signInError);
+        return { error: signInError as Error };
+      }
+
+      // User exists - fetch their role from database
+      if (data.user) {
+        const { data: roleData } = await supabase
+          .from('user_roles')
+          .select('role')
+          .eq('user_id', data.user.id)
+          .maybeSingle();
+        
+        if (roleData) {
+          setRole(roleData.role as AppRole);
+        } else {
+          // Role doesn't exist, create it
+          await supabase.from('user_roles').upsert({ 
+            user_id: data.user.id, 
+            role: demoRole 
+          }, { onConflict: 'user_id' });
           setRole(demoRole);
         }
-
-        return { error: null };
       }
-      return { error: signInError as Error };
-    }
 
-    // User exists - fetch their role from database
-    if (data.user) {
-      const { data: roleData } = await supabase
-        .from('user_roles')
-        .select('role')
-        .eq('user_id', data.user.id)
-        .maybeSingle();
-      
-      if (roleData) {
-        setRole(roleData.role as AppRole);
-      } else {
-        // Role doesn't exist, create it
-        await supabase.from('user_roles').upsert({ 
-          user_id: data.user.id, 
-          role: demoRole 
-        }, { onConflict: 'user_id' });
-        setRole(demoRole);
-      }
+      return { error: null };
+    } catch (err) {
+      console.error('Unexpected error in signInDemo:', err);
+      return { error: err as Error };
     }
-
-    return { error: null };
   };
 
   const signOut = async () => {
