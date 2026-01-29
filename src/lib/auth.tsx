@@ -149,6 +149,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return { error: signInError as Error };
     }
 
+    // User exists - fetch their role from database
+    if (data.user) {
+      const { data: roleData } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', data.user.id)
+        .maybeSingle();
+      
+      if (roleData) {
+        setRole(roleData.role as AppRole);
+      } else {
+        // Role doesn't exist, create it
+        await supabase.from('user_roles').upsert({ 
+          user_id: data.user.id, 
+          role: demoRole 
+        }, { onConflict: 'user_id' });
+        setRole(demoRole);
+      }
+    }
+
     return { error: null };
   };
 
